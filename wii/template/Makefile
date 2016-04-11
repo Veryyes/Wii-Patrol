@@ -7,6 +7,8 @@ ifeq ($(strip $(DEVKITPPC)),)
 $(error "Please set DEVKITPPC in your environment. export DEVKITPPC=<path to>devkitPPC")
 endif
 
+
+
 include $(DEVKITPPC)/wii_rules
 
 #---------------------------------------------------------------------------------
@@ -15,7 +17,7 @@ include $(DEVKITPPC)/wii_rules
 # SOURCES is a list of directories containing source code
 # INCLUDES is a list of directories containing extra header files
 #---------------------------------------------------------------------------------
-TARGET		:=	$(notdir $(CURDIR))
+TARGET		:=	boot#$(notdir $(CURDIR))
 BUILD		:=	build
 SOURCES		:=	source
 DATA		:=	data  

@@ -6,6 +6,22 @@
 static void *xfb = NULL;
 static GXRModeObj *rmode = NULL;
 
+void FillBox(int x1, int y1, int w, int h, int color)
+{
+	int i;
+	int j;
+	int x2 = (x1 + w)>> 1; //Not sure why we need to divide by 2
+	x1 >>= 1;
+	u32 *tmpfb = xfb; //Graphic context
+	for(j=y1; j<=y1+h; j++)
+	{
+		int tmp = j * 320; //why * 320?
+		for(i=x1; i<= x2; i++)
+		{
+			tmpfb[tmp+i] = color;
+		}
+	}
+}
 //---------------------------------------------------------------------------------
 int main(int argc, char **argv) {
 //---------------------------------------------------------------------------------
@@ -15,7 +31,8 @@ int main(int argc, char **argv) {
 	
 	// This function initialises the attached controllers
 	WPAD_Init();
-	
+	WPAD_SetVRes(0,640,480);
+	WPAD_SetDataFormat(WPAD_CHAN_0, WPAD_FMT_BTNS_ACC_IR);
 	// Obtain the preferred video mode from the system
 	// This will correspond to the settings in the Wii menu
 	rmode = VIDEO_GetPreferredMode(NULL);
@@ -50,8 +67,9 @@ int main(int argc, char **argv) {
 	printf("\x1b[2;0H");
 	
 
-	printf("Hello World!");
-
+	printf("Wii Patrol Loaded!");
+	
+	ir_t ir;
 	while(1) {
 
 		// Call WPAD_ScanPads each loop, this reads the latest controller states
@@ -63,6 +81,14 @@ int main(int argc, char **argv) {
 
 		// We return to the launcher application via exit
 		if ( pressed & WPAD_BUTTON_HOME ) exit(0);
+		if ( pressed & WPAD_BUTTON_A)
+		{
+			WPAD_IR(0,&ir);
+		
+			FillBox(ir.x, ir.y, 32, 32, COLOR_WHITE);
+			//Draw Square @ cursor location
+			//Add cursor location (x,y) to array
+		}
 
 		// Wait for the next frame
 		VIDEO_WaitVSync();
