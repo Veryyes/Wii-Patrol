@@ -67,7 +67,7 @@ int main(int argc, char **argv) {
 	printf("\x1b[2;0H");
 	
 
-	printf("Wii Patrol Loaded!");
+	printf("Wii Patrol");
 	
 	ir_t ir;
 	while(1) {
@@ -75,21 +75,25 @@ int main(int argc, char **argv) {
 		// Call WPAD_ScanPads each loop, this reads the latest controller states
 		WPAD_ScanPads();
 
-		// WPAD_ButtonsDown tells us which buttons were pressed in this loop
-		// this is a "one shot" state which will not fire again until the button has been released
+		// WPAD_ButtonsDown tells us which buttons were held in this loop
 		u32 pressed = WPAD_ButtonsDown(0);
+		u32 held = WPAD_ButtonsHeld(0);
 
 		// We return to the launcher application via exit
-		if ( pressed & WPAD_BUTTON_HOME ) exit(0);
-		if ( pressed & WPAD_BUTTON_A)
+		if ( held & WPAD_BUTTON_HOME ) exit(0);
+		if ( held & WPAD_BUTTON_A)
 		{
 			WPAD_IR(0,&ir);
-		
-			FillBox(ir.x, ir.y, 32, 32, COLOR_WHITE);
+			FillBox(ir.x, ir.y, 4, 4, COLOR_WHITE);
+			//printf("(%f, %f)\n",ir.x, ir.y);
 			//Draw Square @ cursor location
 			//Add cursor location (x,y) to array
 		}
-
+		if( pressed & WPAD_BUTTON_B){
+			VIDEO_ClearFrameBuffer(rmode, xfb, COLOR_BLACK);
+			printf("\x1b[2;0H");
+			printf("Wii Patrol");
+		}
 		// Wait for the next frame
 		VIDEO_WaitVSync();
 	}
