@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <gccore.h>
 #include <wiiuse/wpad.h>
+#include "list.h"
 
 static void *xfb = NULL;
 static GXRModeObj *rmode = NULL;
@@ -59,7 +60,7 @@ int main(int argc, char **argv) {
 	VIDEO_WaitVSync();
 	if(rmode->viTVMode&VI_NON_INTERLACE) VIDEO_WaitVSync();
 
-
+	
 	// The console understands VT terminal escape codes
 	// This positions the cursor on row 2, column 0
 	// we can use variables for this with format codes too
@@ -68,7 +69,8 @@ int main(int argc, char **argv) {
 	
 
 	printf("Wii Patrol");
-	
+	Node* head = NULL;
+	Node* tail = NULL;
 	ir_t ir;
 	while(1) {
 
@@ -85,6 +87,7 @@ int main(int argc, char **argv) {
 		{
 			WPAD_IR(0,&ir);
 			FillBox(ir.x, ir.y, 4, 4, COLOR_WHITE);
+			append(&head, &tail, ir.x, ir.y);
 			//printf("(%f, %f)\n",ir.x, ir.y);
 			//Draw Square @ cursor location
 			//Add cursor location (x,y) to array
@@ -93,6 +96,8 @@ int main(int argc, char **argv) {
 			VIDEO_ClearFrameBuffer(rmode, xfb, COLOR_BLACK);
 			printf("\x1b[2;0H");
 			printf("Wii Patrol");
+			printlist(head);
+	//		clear(&head, &tail);
 		}
 		// Wait for the next frame
 		VIDEO_WaitVSync();
