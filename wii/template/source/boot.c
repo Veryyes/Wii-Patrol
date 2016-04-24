@@ -63,7 +63,6 @@ int main(int argc, char **argv) {
 	
 	// The console understands VT terminal escape codes
 	// This positions the cursor on row 2, column 0
-	// we can use variables for this with format codes too
 	// e.g. printf ("\x1b[%d;%dH", row, column );
 	printf("\x1b[2;0H");
 	
@@ -73,32 +72,45 @@ int main(int argc, char **argv) {
 	Node* tail = NULL;
 	ir_t ir;
 	while(1) {
+		//Clears Screen
+		VIDEO_ClearFrameBuffer(rmode, xfb, COLOR_BLACK);
 
-		// Call WPAD_ScanPads each loop, this reads the latest controller states
+		//Scans IR and Buttons
+		WPAD_IR(0,&ir);
 		WPAD_ScanPads();
-
-		// WPAD_ButtonsDown tells us which buttons were held in this loop
 		u32 pressed = WPAD_ButtonsDown(0);
 		u32 held = WPAD_ButtonsHeld(0);
 
-		// We return to the launcher application via exit
-		if ( held & WPAD_BUTTON_HOME ) exit(0);
+		printf("\x1b[2;0H");
+		printf("Wii Patrol");
+
+		//Draw Path
+		Node* curr;
+		for(curr=head;curr!=NULL;curr=curr->next)
+			FillBox(curr->x, curr->y, 4, 4, COLOR_WHITE);
+		
+		//Exit on Homebutton
+		if ( pressed & WPAD_BUTTON_HOME ) 
+			exit(0);
+
 		if ( held & WPAD_BUTTON_A)
 		{
-			WPAD_IR(0,&ir);
 			FillBox(ir.x, ir.y, 4, 4, COLOR_WHITE);
 			append(&head, &tail, ir.x, ir.y);
-			//printf("(%f, %f)\n",ir.x, ir.y);
 			//Draw Square @ cursor location
-			//Add cursor location (x,y) to array
+			//Add cursor location (x,y) to list
 		}
+
+		//Draw Cursor
+		FillBox(ir.x, ir.y, 8, 8, COLOR_RED);
+
 		if( pressed & WPAD_BUTTON_B){
-			VIDEO_ClearFrameBuffer(rmode, xfb, COLOR_BLACK);
+			/*VIDEO_ClearFrameBuffer(rmode, xfb, COLOR_BLACK);
 			printf("\x1b[2;0H");
 			printf("Wii Patrol");
-			printlist(head);
-	//		clear(&head, &tail);
-		}
+			printlist(head);*/
+			clear(&head, &tail);
+		}		
 		// Wait for the next frame
 		VIDEO_WaitVSync();
 	}

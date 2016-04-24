@@ -31,6 +31,7 @@ void append(Node** head, Node** tail, float x, float y)
 		
 		(*tail)->next = temp;
 		temp->prev = (*tail);
+		temp->next = NULL;
 		(*tail) = temp;
 	}
 }
