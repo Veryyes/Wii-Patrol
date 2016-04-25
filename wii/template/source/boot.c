@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <gccore.h>
 #include <wiiuse/wpad.h>
 #include <network.h>
@@ -65,44 +66,41 @@ int main(int argc, char **argv) {
 	// The console understands VT terminal escape codes
 	// This positions the cursor on row 2, column 0
 	// e.g. printf ("\x1b[%d;%dH", row, column );
-	printf("\x1b[2;0H");
+	printf("\x1b[2;2H");
 	printf("Wii Patrol\n");
 
 	//Initialize Networking
 	net_init();
 	s32 socket = net_socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
-	printf("s32 Socket: %d\n", socket);
+	if(socket>=0)
+		printf("  Socket Created\n");
+	else
+		printf("  Error Creating Socket: %d\n", socket);
 
+	struct hostent* he = net_gethostbyname("bwong.me");
+	struct in_addr** addr_list = (struct in_addr**) he->h_addr_list;
 	struct sockaddr_in client;
 	
 	client.sin_len=8;
 	client.sin_family=AF_INET;
 	client.sin_port=htons(1337);
-	client.sin_addr.s_addr=inet_addr("127.0.0.1");
-
-/*	struct sockaddr sock_addr;
-	sock_addr.sa_len = 8;
-	sock_addr.sa_family=AF_INET;*/
-	
-	//char buff[32];
-	char message[32]="Dogs\n";	
-
+	client.sin_addr = **addr_list;
 	s32 connection = net_connect(socket, &client, sizeof(client));
-	printf("net_connect: %d\n",connection);
-	s32 w=net_write(socket,message,strlen(message));
-//	s32 n=net_sendto(socket, buff,32,0,&client,sizeof(client));
-	printf("net_write: %d\n", w);
-	//s32 n=net_read(socket,buff,32);
-	//printf("net_read: %d %s\n", n, buff);
-	//printf(buff);
+	if(connection>=0)
+		printf("  Sucessfully Connected!\n");
+	else
+		printf("  Could not Connect: %d\n", connection);
+
+
 	Node* head = NULL;
 	Node* tail = NULL;
 	ir_t ir;
 	
-	
+	sleep(1); //So we can see connection status
+
 	while(1) {
 		//Clears Screen
-	//	VIDEO_ClearFrameBuffer(rmode, xfb, COLOR_BLACK);
+		VIDEO_ClearFrameBuffer(rmode, xfb, COLOR_BLACK);
 
 		//Scans IR and Buttons
 		WPAD_IR(0,&ir);
@@ -110,8 +108,8 @@ int main(int argc, char **argv) {
 		u32 pressed = WPAD_ButtonsDown(0);
 		u32 held = WPAD_ButtonsHeld(0);
 
-	//	printf("\x1b[2;0H");
-	//	printf("Wii Patrol\n");
+		printf("\x1b[2;2H");
+		printf("Wii Patrol\n");
 		
 		//Draw Path
 		Node* curr;
@@ -121,7 +119,43 @@ int main(int argc, char **argv) {
 		//Exit on Homebutton
 		if ( pressed & WPAD_BUTTON_HOME ) 
 			exit(0);
-
+		if ((pressed & WPAD_BUTTON_PLUS)&&head!=NULL)
+		{
+			s32 bytes_written = 0;
+			Node* curr = head->next;
+			while(curr!=NULL)
+			{
+				float dx = curr->x - curr->prev->x;
+				float dy = curr->y - curr->prev->y;
+				
+				if(dx!=0 || dy!=0)
+				{
+					s32 xbytes = net_write(socket, &dx, sizeof(dx));
+					if(xbytes>0)
+					bytes_written += xbytes;
+					else
+					{	
+						printf("  Could not write to socket: %d\n", xbytes);
+						sleep(1);
+					}
+					s32 ybytes = net_write(socket, &dy, sizeof(dy));
+					if(ybytes>0)
+						bytes_written += ybytes;
+					else
+					{
+						printf("  Could not write to socket: %d\n", ybytes);
+						sleep(1);
+					}
+				}
+				curr = curr->next;
+			}
+			char nullterminator = 0; 
+			if(net_write(socket, &nullterminator, 1)>0)
+				bytes_written++;
+			printf("  Bytes Written: %d\n", bytes_written);
+			clear(&head, &tail);
+			sleep(3);
+		}
 		if ( held & WPAD_BUTTON_A)
 		{
 			FillBox(ir.x, ir.y, 4, 4, COLOR_WHITE);
@@ -133,12 +167,8 @@ int main(int argc, char **argv) {
 		//Draw Cursor
 		FillBox(ir.x, ir.y, 8, 8, COLOR_RED);
 
-		if( pressed & WPAD_BUTTON_B){
-			/*VIDEO_ClearFrameBuffer(rmode, xfb, COLOR_BLACK);
-			printf("\x1b[2;0H");
-			printf("Wii Patrol");
-			printlist(head);*/
-				
+		if( pressed & WPAD_BUTTON_B)
+		{
 			clear(&head, &tail);
 		}		
 		// Wait for the next frame
