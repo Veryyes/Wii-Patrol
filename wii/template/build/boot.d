@@ -55,6 +55,7 @@ boot.o: \
  /home/brandon/Programming/devkitpro//libogc/include/wiiuse/wiiuse.h \
  /home/brandon/Programming/devkitpro//libogc/include/bte/bte.h \
  /home/brandon/Programming/devkitpro//libogc/include/bte/bd_addr.h \
+ /home/brandon/Programming/devkitpro//libogc/include/network.h \
  /home/brandon/Programming/devkitpro/Wii-Patrol/wii/template/include/list.h
 
 /home/brandon/Programming/devkitpro//libogc/include/gccore.h:
@@ -166,5 +167,7 @@ boot.o: \
 /home/brandon/Programming/devkitpro//libogc/include/bte/bte.h:
 
 /home/brandon/Programming/devkitpro//libogc/include/bte/bd_addr.h:
+
+/home/brandon/Programming/devkitpro//libogc/include/network.h:
 
 /home/brandon/Programming/devkitpro/Wii-Patrol/wii/template/include/list.h:

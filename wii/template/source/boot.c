@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <gccore.h>
 #include <wiiuse/wpad.h>
+#include <network.h>
+#include <string.h>
 #include "list.h"
 
 static void *xfb = NULL;
@@ -59,21 +61,48 @@ int main(int argc, char **argv) {
 	// Wait for Video setup to complete
 	VIDEO_WaitVSync();
 	if(rmode->viTVMode&VI_NON_INTERLACE) VIDEO_WaitVSync();
-
 	
 	// The console understands VT terminal escape codes
 	// This positions the cursor on row 2, column 0
 	// e.g. printf ("\x1b[%d;%dH", row, column );
 	printf("\x1b[2;0H");
-	
+	printf("Wii Patrol\n");
 
-	printf("Wii Patrol");
+	//Initialize Networking
+	net_init();
+	s32 socket = net_socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
+	printf("s32 Socket: %d\n", socket);
+
+	struct sockaddr_in client;
+	
+	client.sin_len=8;
+	client.sin_family=AF_INET;
+	client.sin_port=htons(1337);
+	client.sin_addr.s_addr=inet_addr("127.0.0.1");
+
+/*	struct sockaddr sock_addr;
+	sock_addr.sa_len = 8;
+	sock_addr.sa_family=AF_INET;*/
+	
+	//char buff[32];
+	char message[32]="Dogs\n";	
+
+	s32 connection = net_connect(socket, &client, sizeof(client));
+	printf("net_connect: %d\n",connection);
+	s32 w=net_write(socket,message,strlen(message));
+//	s32 n=net_sendto(socket, buff,32,0,&client,sizeof(client));
+	printf("net_write: %d\n", w);
+	//s32 n=net_read(socket,buff,32);
+	//printf("net_read: %d %s\n", n, buff);
+	//printf(buff);
 	Node* head = NULL;
 	Node* tail = NULL;
 	ir_t ir;
+	
+	
 	while(1) {
 		//Clears Screen
-		VIDEO_ClearFrameBuffer(rmode, xfb, COLOR_BLACK);
+	//	VIDEO_ClearFrameBuffer(rmode, xfb, COLOR_BLACK);
 
 		//Scans IR and Buttons
 		WPAD_IR(0,&ir);
@@ -81,9 +110,9 @@ int main(int argc, char **argv) {
 		u32 pressed = WPAD_ButtonsDown(0);
 		u32 held = WPAD_ButtonsHeld(0);
 
-		printf("\x1b[2;0H");
-		printf("Wii Patrol");
-
+	//	printf("\x1b[2;0H");
+	//	printf("Wii Patrol\n");
+		
 		//Draw Path
 		Node* curr;
 		for(curr=head;curr!=NULL;curr=curr->next)
@@ -109,6 +138,7 @@ int main(int argc, char **argv) {
 			printf("\x1b[2;0H");
 			printf("Wii Patrol");
 			printlist(head);*/
+				
 			clear(&head, &tail);
 		}		
 		// Wait for the next frame
