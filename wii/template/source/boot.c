@@ -5,21 +5,54 @@
 #include <wiiuse/wpad.h>
 #include <network.h>
 #include <string.h>
+#include <math.h>
 #include "list.h"
 
 static void *xfb = NULL;
 static GXRModeObj *rmode = NULL;
 
+void itoa(int integer, char* buff, int buff_len)
+{
+        if(!integer)
+        {
+                buff[0]='0';
+                buff[1]='\0';
+                return;
+        }
+	if(integer<0)
+	{
+		char neg='-';
+		strcat(buff,&neg);
+		buff_len--;
+		integer*=-1;
+	}
+        integer++;
+        int digits = (int)ceil(log10(integer));
+        integer--;
+        for(;digits>0&&buff_len>0;digits--)
+        {
+                int i;
+                int pow=1;
+                for(i=digits;i>1;i--)
+                        pow = pow *10;
+		char digit[2];
+                digit[0] = (char)(((integer/pow)%10)+'0');
+                digit[1] = '\0';
+                strcat(buff,&digit);
+                buff_len--;
+        }
+}
+
 void FillBox(int x1, int y1, int w, int h, int color)
 {
 	int i;
 	int j;
-	int x2 = (x1 + w)>> 1; //Not sure why we need to divide by 2
+	int x2 = (x1 + w)>> 1;
 	x1 >>= 1;
 	u32 *tmpfb = xfb; //Graphic context
 	for(j=y1; j<=y1+h; j++)
 	{
-		int tmp = j * 320; //why * 320?
+		int tmp = j * 320;
 		for(i=x1; i<= x2; i++)
 		{
 			tmpfb[tmp+i] = color;
@@ -77,21 +110,24 @@ int main(int argc, char **argv) {
 	else
 		printf("  Error Creating Socket: %d\n", socket);
 
-	struct hostent* he = net_gethostbyname("bwong.me");
-	struct in_addr** addr_list = (struct in_addr**) he->h_addr_list;
+//	struct hostent* he = net_gethostbyname("bwong.me");
+//	struct in_addr** addr_list = (struct in_addr**) he->h_addr_list;
 	struct sockaddr_in client;
-	
+		
+
 	client.sin_len=8;
 	client.sin_family=AF_INET;
 	client.sin_port=htons(1337);
-	client.sin_addr = **addr_list;
+	client.sin_addr.s_addr=inet_addr("192.168.43.38");//Local IP address
+	//client.sin_addr = **addr_list;
 	s32 connection = net_connect(socket, &client, sizeof(client));
 	if(connection>=0)
 		printf("  Sucessfully Connected!\n");
 	else
 		printf("  Could not Connect: %d\n", connection);
 
-
+	//char lel[5] = "hi\n";
+	//net_write(socket, lel, 5);
 	Node* head = NULL;
 	Node* tail = NULL;
 	ir_t ir;
@@ -125,32 +161,52 @@ int main(int argc, char **argv) {
 			Node* curr = head->next;
 			while(curr!=NULL)
 			{
-				float dx = curr->x - curr->prev->x;
-				float dy = curr->y - curr->prev->y;
+				//printf("%d, %d\n", (int)ceil(curr->x - curr->prev->x),(int)ceil(curr->y - curr->prev->y));
+				//sleep(1);
+				char dx[32];
+				memset(&dx,0,32);
+				itoa(ceil(curr->x - curr->prev->x), dx, 32);
+				char dy[32];
+				memset(&dy,0,32);
+				itoa(ceil(curr->y - curr->prev->y), dy, 32);
 				
-				if(dx!=0 || dy!=0)
+				if((ceil(curr->x - curr->prev->x))!=0 || (ceil(curr->y - curr->prev->y))!=0)
 				{
-					s32 xbytes = net_write(socket, &dx, sizeof(dx));
+					printf("%s, ",dx);
+					s32 xbytes = net_write(socket, &dx, strlen(dx));
 					if(xbytes>0)
 					bytes_written += xbytes;
 					else
 					{	
 						printf("  Could not write to socket: %d\n", xbytes);
 						sleep(1);
+						break;
 					}
-					s32 ybytes = net_write(socket, &dy, sizeof(dy));
+
+					char comma = ',';
+					net_write(socket,&comma,1);
+					bytes_written++;
+					
+					printf("%s\n",dy);
+					s32 ybytes = net_write(socket, &dy, strlen(dy));
 					if(ybytes>0)
 						bytes_written += ybytes;
 					else
 					{
 						printf("  Could not write to socket: %d\n", ybytes);
 						sleep(1);
+						break;
 					}
+					
+					char space =' ';
+					net_write(socket, &space, 1);
+					bytes_written++;
+
 				}
 				curr = curr->next;
 			}
-			char nullterminator = 0; 
-			if(net_write(socket, &nullterminator, 1)>0)
+			char newline = '\n'; 
+			if(net_write(socket, &newline, 1)>0)
 				bytes_written++;
 			printf("  Bytes Written: %d\n", bytes_written);
 			clear(&head, &tail);
