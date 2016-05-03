@@ -118,7 +118,7 @@ int main(int argc, char **argv) {
 	client.sin_len=8;
 	client.sin_family=AF_INET;
 	client.sin_port=htons(1337);
-	client.sin_addr.s_addr=inet_addr("192.168.43.38");//Local IP address
+	client.sin_addr.s_addr=inet_addr("192.168.43.5");//Local IP address
 	//client.sin_addr = **addr_list;
 	s32 connection = net_connect(socket, &client, sizeof(client));
 	if(connection>=0)
@@ -153,8 +153,11 @@ int main(int argc, char **argv) {
 			FillBox(curr->x, curr->y, 4, 4, COLOR_WHITE);
 		
 		//Exit on Homebutton
-		if ( pressed & WPAD_BUTTON_HOME ) 
+		if ( pressed & WPAD_BUTTON_HOME )
+		{
+			net_close(socket);
 			exit(0);
+		}
 		if ((pressed & WPAD_BUTTON_PLUS)&&head!=NULL)
 		{
 			s32 bytes_written = 0;
@@ -172,7 +175,7 @@ int main(int argc, char **argv) {
 				
 				if((ceil(curr->x - curr->prev->x))!=0 || (ceil(curr->y - curr->prev->y))!=0)
 				{
-					printf("%s, ",dx);
+	//				printf("%s, ",dx);
 					s32 xbytes = net_write(socket, &dx, strlen(dx));
 					if(xbytes>0)
 					bytes_written += xbytes;
@@ -187,7 +190,7 @@ int main(int argc, char **argv) {
 					net_write(socket,&comma,1);
 					bytes_written++;
 					
-					printf("%s\n",dy);
+	//				printf("%s\n",dy);
 					s32 ybytes = net_write(socket, &dy, strlen(dy));
 					if(ybytes>0)
 						bytes_written += ybytes;
